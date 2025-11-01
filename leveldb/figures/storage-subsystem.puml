@@ -1,0 +1,94 @@
+@startuml
+' --- Style Tweaks ---
+skinparam class {
+BackgroundColor #F1E4E8
+BorderColor #997B83
+ArrowColor #58454B
+}
+skinparam note {
+backgroundColor #E2D2D6
+borderColor #997B83
+}
+
+title Storage Subsystem (SSTable)
+
+class TableCache {
+
+Get(file_number, file_size, key): Iterator*
+--
+
+cache_: ShardedLRUCache
+}
+note top of TableCache
+Manages a cache of opened SSTable files.
+Prevents the high cost of repeatedly
+opening and reading the index of files.
+end note
+
+class Table {
+
+Open(file, file_size): Status
+
+InternalGet(key): Iterator*
+
+ReadBlock(file, options, handle): Block*
+--
+
+rep_: Rep*
+}
+note left of Table
+Represents a single, immutable,
+sorted SSTable file on disk.
+It's the primary on-disk storage format.
+end note
+
+class Block {
+
+NewIterator(): Iterator*
+--
+
+data_: char*
+
+size_: size_t
+}
+note bottom of Block
+A contiguous block of data within an
+SSTable file, typically holding
+multiple key-value pairs. Blocks
+are the unit of reading from disk.
+end note
+
+class BlockHandle {
+
+offset_: uint64_t
+
+size_: uint64_t
+}
+note right of BlockHandle
+A pointer to a specific Block
+within an SSTable file, containing
+its offset and size.
+end note
+
+class Footer {
+
+metaindex_handle_: BlockHandle
+
+index_handle_: BlockHandle
+}
+note right of Table
+The Footer is a fixed-size section
+at the end of every SSTable file.
+It contains BlockHandles that point
+to the index and metaindex blocks,
+which are the entry points for
+reading the file.
+end note
+
+' --- Relationships ---
+TableCache o-- "many" Table : manages/caches >
+Table *-- "1" Footer : has
+Table *-- "many" Block : composed of >
+Table *-- "1" BlockHandle : uses index handle >
+
+@enduml

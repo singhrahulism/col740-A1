@@ -1,0 +1,14 @@
+@startuml
+actor Client
+participant DB
+participant DBImpl
+participant WAL
+participant MemTable
+
+Client -> DB: Put(key, value)
+DB -> DBImpl: Put(...)
+DBImpl -> WAL: Append(record)
+DBImpl -> MemTable: Add(key, value)
+DBImpl --> DB: return Status
+DB --> Client: Status
+@enduml

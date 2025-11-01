@@ -1,0 +1,31 @@
+@startuml
+autonumber
+actor "User App" as User
+
+participant "DBImpl" as Impl
+participant "log::Writer" as WAL
+participant "MemTable" as Mem
+
+' --- Sequence of Events ---
+title Write Path Subsystem
+
+User -> Impl: Put(key, value)
+activate Impl
+
+Impl -> Impl: Create WriteBatch
+Impl -> WAL: AddRecord(WriteBatch)
+note right: The Write-Ahead Log (WAL) ensures durability.\nThe write is persisted to the log before being added to memory.
+activate WAL
+WAL --> Impl: Status::OK()
+deactivate WAL
+
+Impl -> Mem: Insert(WriteBatch)
+note right: The data is added to the in-memory MemTable,\nwhich is a sorted SkipList. The write is now visible to readers.
+activate Mem
+Mem --> Impl: Status::OK()
+deactivate Mem
+
+Impl --> User: Status::OK()
+deactivate Impl
+
+@enduml

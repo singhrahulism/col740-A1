@@ -1,0 +1,17 @@
+@startuml
+package "util (Utilities)" {
+  class Env {
+    +Status NewWritableFile(name, result)
+    +Status DeleteFile(name)
+  }
+  class EnvPosix
+  class Coding
+  class CRC32C
+  class Histogram
+}
+
+Env <|-- EnvPosix
+EnvPosix --> CRC32C : uses >
+EnvPosix --> Coding : uses >
+Histogram --> EnvPosix : metrics for IO
+@enduml

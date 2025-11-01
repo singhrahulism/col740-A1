@@ -1,0 +1,79 @@
+@startuml
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam arrow {
+Color #444444
+Thickness 1.5
+}
+skinparam package {
+borderColor #6C757D
+backgroundColor #F8F9FA
+}
+skinparam component {
+borderColor #007BFF
+backgroundColor #E9ECEF
+fontColor #212529
+}
+skinparam note {
+backgroundColor #FFF3CD
+borderColor #FFC107
+}
+
+title Architectural Centrality in LevelDB
+
+[User Application]
+
+package "LevelDB System Boundary" {
+
+package "Public API (include/leveldb/)" as API {
+    [DB]
+    [Iterator]
+    [WriteBatch]
+    [Options]
+}
+
+package "Internal Implementation (db/, table/)" as Core {
+    [DBImpl]
+    [VersionSet]
+    [MemTable]
+    [TableBuilder]
+}
+
+package "Shared Utilities (util/)" as Util {
+    [Status]
+    [Arena]
+}
+
+
+}
+
+' --- Dependencies ---
+
+' 1. User interacts only with the Public API
+[User Application] ..> [DB] : <<uses>> Get(), Put()
+[User Application] ..> [WriteBatch]
+[User Application] ..> [Options]
+
+' 2. The Public API delegates to the core implementation
+[DB] ..> [DBImpl] : delegates to
+
+' 3. DBImpl is a central orchestrator (high out-degree)
+[DBImpl] ..> [MemTable] : manages
+[DBImpl] ..> [VersionSet] : manages
+[DBImpl] ..> [TableBuilder] : triggers
+[DBImpl] ..> [Arena] : uses for memory
+
+' 4. Status is a central utility (high in-degree)
+note right of Util
+<b>High In-Degree Example:</b>
+Almost every core component depends
+on the Status class for error reporting.
+This makes it architecturally salient.
+end note
+
+Core ..> [Status]
+[DBImpl] ..> [Status]
+[VersionSet] ..> [Status]
+[TableBuilder] ..> [Status]
+
+@enduml

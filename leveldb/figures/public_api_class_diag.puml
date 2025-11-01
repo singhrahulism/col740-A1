@@ -1,0 +1,20 @@
+@startuml
+package "Public API (include/leveldb)" {
+  class DB {
+    +Status Open(const Options&, const std::string&, DB**)
+    +Status Put(const WriteOptions&, const Slice&, const Slice&)
+    +Status Get(const ReadOptions&, const Slice&, std::string*)
+  }
+
+  class Options
+  class ReadOptions
+  class WriteOptions
+  class Iterator
+  class Status
+  class Slice
+}
+
+DB --> Iterator : returns >
+DB --> Status
+DB --> Options
+@enduml

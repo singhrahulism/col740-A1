@@ -1,0 +1,21 @@
+@startuml
+package "table (SSTable module)" {
+  class Table {
+    +Status Open(...)
+    +Iterator* NewIterator()
+  }
+  class TableBuilder {
+    +Add(key, value)
+    +Finish()
+  }
+  class Block
+  class BlockBuilder
+  class FilterBlock
+  class TableCache
+}
+
+Table --> Block
+TableBuilder --> BlockBuilder
+Table --> FilterBlock
+TableCache --> Table
+@enduml

@@ -1,0 +1,129 @@
+@startuml
+
+title Core LevelDB Component Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam defaultFontName Arial
+skinparam class {
+    HeaderBackgroundColor #EFEFEF
+    BorderColor #A80036
+    ArrowColor #A80036
+}
+skinparam interface {
+    HeaderBackgroundColor #EFEFEF
+    BorderColor #A80036
+    ArrowColor #A80036
+}
+skinparam note {
+    BackgroundColor #FFFFE0
+    BorderColor #A80036
+}
+
+' Define Classes and Interfaces
+interface DB {
+    + Put(write_options, key, value) : Status
+    + Get(read_options, key, &value) : Status
+    + Delete(write_options, key) : Status
+    + NewIterator(read_options) : Iterator*
+    + GetSnapshot() : Snapshot*
+}
+
+class DBImpl {
+    - env_ : Env*
+    - options_ : Options
+    - dbname_ : std::string
+    - log_ : log::Writer*
+    - mem_ : MemTable*
+    - imm_ : MemTable*
+    - versions_ : VersionSet*
+    - table_cache_ : TableCache*
+    ---
+    + Put(...) : Status
+    + Get(...) : Status
+    + Delete(...) : Status
+    ---
+    - CompactMemTable()
+    - BackgroundCompaction()
+}
+
+class VersionSet {
+    - manifest_file_number_
+    - current_ : Version*
+    ---
+    + LogAndApply(edit)
+    + NeedsCompaction() : bool
+}
+
+class Version {
+    - files_[config::kNumLevels]
+    ---
+    + Get(options, key, &value)
+}
+
+class FileMetaData {
+}
+
+class MemTable {
+    - table_ : SkipList
+    ---
+    + Add(seq, type, key, value)
+    + Get(key, &value, &status)
+}
+
+namespace log {
+    class Writer {
+        ---
+        + AddRecord(slice) : Status
+    }
+}
+
+class TableCache {
+    ---
+    + FindTable(file_number, file_size)
+    + NewIterator(...) : Iterator*
+}
+
+class Options {
+    + comparator_ : Comparator*
+    + create_if_missing_ : bool
+}
+
+class Status {
+    + ok() : bool
+    + tableFound() : bool
+}
+
+class Snapshot {
+    - sequence_number_
+}
+
+' Define Relationships
+DB <|-- DBImpl
+
+' Composition Relationships from DBImpl
+DBImpl *-- "1" VersionSet : versions_
+DBImpl *-- "1.2" MemTable : mem_, imm_
+DBImpl *-- "1" log::Writer : log_
+DBImpl *-- "1" TableCache : table_cache_
+
+' Composition Relationships from VersionSet/Version
+VersionSet *-- "*" Version : manages versions
+Version o-- "*" FileMetaData : represents a set of files
+
+' Dependency Relationships from DBImpl
+DBImpl ..> Options : uses for config
+DBImpl ..> Status : returns as result
+DBImpl ..> Snapshot : creates
+
+' Notes
+note left of DBImpl::versions_
+  DBImpl owns and manages the lifecycle of
+  its core stateful components (Composition)
+end note
+
+note right of TableCache
+  DBImpl uses the TableCache
+  to access SSTable data.
+end note
+
+@enduml

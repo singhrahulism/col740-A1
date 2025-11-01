@@ -1,0 +1,68 @@
+@startuml
+skinparam class {
+BackgroundColor #E8F0F3
+BorderColor #7D9AAA
+ArrowColor #4A6572
+}
+skinparam note {
+backgroundColor #DAE5E9
+borderColor #7D9AAA
+}
+
+title Comparison and Filtering Policies
+
+abstract class Comparator {
+
+Compare(a, b): int
+
+Name(): const char*
+}
+note top of Comparator
+<b>Strategy Pattern:</b> Defines a family of comparison
+algorithms. The user can provide a custom
+comparator to define key ordering (e.g., for
+lexicographical vs. numerical sorting).
+end note
+
+class BytewiseComparator extends Comparator {
+
+Compare(a, b): int
+}
+
+class InternalKeyComparator {
+
+user_comparator_: Comparator*
+}
+note right of InternalKeyComparator
+<b>Decorator Pattern:</b> Wraps a user-provided
+comparator to handle the internal key
+format, which includes sequence numbers
+and value types in addition to the user key.
+end note
+
+abstract class FilterPolicy {
+
+CreateFilter(keys): void
+
+KeyMayMatch(key, filter): bool
+
+Name(): const char*
+}
+note bottom of FilterPolicy
+<b>Strategy Pattern:</b> Allows plugging in different
+probabilistic data structures to dramatically
+speed up reads by avoiding disk access for
+non-existent keys.
+end note
+
+class BloomFilterPolicy extends FilterPolicy {
+
+bits_per_key_: int
+}
+
+' --- Relationships ---
+InternalKeyComparator *-- "1" Comparator : wraps >
+DBImpl *-- "1" InternalKeyComparator : uses >
+DBImpl *-- "1" FilterPolicy : uses >
+
+@enduml

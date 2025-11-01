@@ -1,0 +1,70 @@
+@startuml
+skinparam class {
+BackgroundColor #F8F9FA
+BorderColor #495057
+ArrowColor #343A40
+}
+skinparam note {
+backgroundColor #E9ECEF
+borderColor #6C757D
+}
+
+title Memory Management Subsystem
+
+class MemTable {
+
+Add(sequence, type, key, value)
+
+Get(key)
+
+NewIterator()
+--
+
+table_: SkipList
+
+arena_: Arena
+
+comparator_: InternalKeyComparator
+}
+note left of MemTable
+The in-memory write buffer.
+It holds recent writes until
+it becomes full and is flushed
+to a disk-based SSTable.
+end note
+
+class Arena {
+
+Allocate(bytes): char*
+
+MemoryUsage(): size_t
+--
+
+memory_: vector<char*>
+}
+note right of Arena
+A custom memory allocator.
+It allocates memory in large blocks
+to reduce the overhead of many small
+allocations, improving write performance.
+end note
+
+class SkipList<Key, Comparator> {
+
+Insert(key)
+
+Contains(key)
+
+NewIterator()
+}
+note bottom of SkipList
+The core data structure within a MemTable.
+It keeps keys sorted, allowing for both
+fast writes and efficient scans (iterators).
+end note
+
+' --- Relationships ---
+MemTable *-- "1" Arena : uses for allocation >
+MemTable *-- "1" SkipList : contains sorted data >
+
+@enduml

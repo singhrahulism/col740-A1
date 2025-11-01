@@ -1,0 +1,12 @@
+# Editors.
+*.sw*
+.vscode
+.DS_Store
+
+# Build directory.
+leveldb/build/
+leveldb/out/
+leveldb/html/
+leveldb/latex/
+important_uml
+run_doxygen
